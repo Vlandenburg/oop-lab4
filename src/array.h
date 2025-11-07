@@ -1,110 +1,79 @@
 #pragma once
-
 #include <cstddef>
 #include <utility>
 #include <stdexcept>
 
-template <class T>
-class Array {
+template <class Item>
+class CustomArray {
 private:
-    T* elements;
-    size_t count;
-    size_t storage_size;
+    Item* m_data;
+    size_t m_size;
+    size_t m_capacity;
 
-    void expand_storage(size_t new_cap) {
-        T* new_elements = new T[new_cap];
-        for (size_t i = 0; i < count; ++i) {
-            new_elements[i] = std::move(elements[i]);
+    void resize_storage() {
+        size_t new_capacity = (m_capacity == 0) ? 1 : m_capacity + m_capacity / 2 + 1; // Рост ~1.5x
+        Item* new_block = new Item[new_capacity];
+        for (size_t i = 0; i < m_size; ++i) {
+            new_block[i] = std::move(m_data[i]);
         }
-        delete[] elements;
-        elements = new_elements;
-        storage_size = new_cap;
+        delete[] m_data;
+        m_data = new_block;
+        m_capacity = new_capacity;
     }
 
 public:
-    Array() : elements(nullptr), count(0), storage_size(0) {}
+    CustomArray() : m_data(nullptr), m_size(0), m_capacity(0) {}
+    ~CustomArray() { delete[] m_data; }
 
-    ~Array() {
-        delete[] elements;
+    CustomArray(const CustomArray& other) : m_data(new Item[other.m_capacity]), m_size(other.m_size), m_capacity(other.m_capacity) {
+        for (size_t i = 0; i < m_size; ++i) m_data[i] = other.m_data[i];
     }
-
-    Array(const Array& other) : elements(new T[other.storage_size]), count(other.count), storage_size(other.storage_size) {
-        for (size_t i = 0; i < count; ++i) {
-            elements[i] = other.elements[i];
-        }
-    }
-
-    Array& operator=(const Array& other) {
-        if (this != &other) {
-            delete[] elements;
-            elements = new T[other.storage_size];
-            count = other.count;
-            storage_size = other.storage_size;
-            for (size_t i = 0; i < count; ++i) {
-                elements[i] = other.elements[i];
-            }
-        }
+    CustomArray& operator=(const CustomArray& other) {
+        if (this == &other) return *this;
+        delete[] m_data;
+        m_data = new Item[other.m_capacity];
+        m_size = other.m_size;
+        m_capacity = other.m_capacity;
+        for (size_t i = 0; i < m_size; ++i) m_data[i] = other.m_data[i];
         return *this;
     }
     
-    Array(Array&& other) noexcept : elements(other.elements), count(other.count), storage_size(other.storage_size) {
-        other.elements = nullptr;
-        other.count = 0;
-        other.storage_size = 0;
+    CustomArray(CustomArray&& other) noexcept : m_data(other.m_data), m_size(other.m_size), m_capacity(other.m_capacity) {
+        other.m_data = nullptr; other.m_size = 0; other.m_capacity = 0;
     }
-    
-    Array& operator=(Array&& other) noexcept {
-        if (this != &other) {
-            delete[] elements;
-            elements = other.elements;
-            count = other.count;
-            storage_size = other.storage_size;
-            other.elements = nullptr;
-            other.count = 0;
-            other.storage_size = 0;
-        }
+    CustomArray& operator=(CustomArray&& other) noexcept {
+        if (this == &other) return *this;
+        delete[] m_data;
+        m_data = other.m_data; m_size = other.m_size; m_capacity = other.m_capacity;
+        other.m_data = nullptr; other.m_size = 0; other.m_capacity = 0;
         return *this;
     }
 
-    void push_back(const T& val) {
-        if (count == storage_size) {
-            expand_storage(storage_size == 0 ? 1 : storage_size * 2);
-        }
-        elements[count++] = val;
+    void add(const Item& value) {
+        if (m_size >= m_capacity) resize_storage();
+        m_data[m_size++] = value;
+    }
+    void add(Item&& value) {
+        if (m_size >= m_capacity) resize_storage();
+        m_data[m_size++] = std::move(value);
     }
 
-    void push_back(T&& val) {
-        if (count == storage_size) {
-            expand_storage(storage_size == 0 ? 1 : storage_size * 2);
+    void remove_at(size_t index) {
+        if (index >= m_size) throw std::out_of_range("Bad index provided");
+        for (size_t i = index; i < m_size - 1; ++i) {
+            m_data[i] = std::move(m_data[i + 1]);
         }
-        elements[count++] = std::move(val);
+        --m_size;
     }
 
-    void erase(size_t idx) {
-        if (idx >= count) {
-            throw std::out_of_range("Index is out of array bounds");
-        }
-        for (size_t i = idx; i < count - 1; ++i) {
-            elements[i] = std::move(elements[i + 1]);
-        }
-        --count;
+    Item& get(size_t index) {
+        if (index >= m_size) throw std::out_of_range("Bad index provided");
+        return m_data[index];
+    }
+    const Item& get(size_t index) const {
+        if (index >= m_size) throw std::out_of_range("Bad index provided");
+        return m_data[index];
     }
 
-    T& operator[](size_t idx) {
-        if (idx >= count) {
-            throw std::out_of_range("Index is out of array bounds");
-        }
-        return elements[idx];
-    }
-
-    const T& operator[](size_t idx) const {
-        if (idx >= count) {
-            throw std::out_of_range("Index is out of array bounds");
-        }
-        return elements[idx];
-    }
-
-    size_t size() const {
-        return count;
-    }
+    size_t count() const { return m_size; }
 };

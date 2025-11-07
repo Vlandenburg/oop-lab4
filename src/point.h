@@ -1,25 +1,23 @@
 #pragma once
-
 #include <iostream>
 #include <concepts>
 
-template <typename T>
-concept IsArithmetic = std::is_arithmetic_v<T>;
+template <typename Number>
+concept NumericType = std::is_arithmetic_v<Number>;
 
-template <IsArithmetic CoordType>
+template <NumericType U>
 struct Point {
-    CoordType x, y;
+    U x, y;
 };
 
-template <IsArithmetic CoordType>
-std::istream& operator>>(std::istream& is, Point<CoordType>& pt) {
-    is >> pt.x >> pt.y;
-    return is;
+template <NumericType U>
+std::istream& operator>>(std::istream& input, Point<U>& p) {
+    input >> p.x >> p.y;
+    return input;
 }
 
-// Было: std.ostream - стало std::ostream
-template <IsArithmetic CoordType>
-std::ostream& operator<<(std::ostream& os, const Point<CoordType>& pt) {
-    os << "(" << pt.x << ", " << pt.y << ")";
-    return os;
+template <NumericType U>
+std::ostream& operator<<(std::ostream& output, const Point<U>& p) {
+    output << "[" << p.x << ";" << p.y << "]";
+    return output;
 }

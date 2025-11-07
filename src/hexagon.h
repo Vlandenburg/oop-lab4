@@ -1,82 +1,37 @@
 #pragma once
-
 #include "figure.h"
 #include <memory>
 #include <cmath>
 #include <utility>
 
-template <IsArithmetic T>
+template <NumericType T>
 class Hexagon : public Figure<T> {
 private:
-    std::unique_ptr<Point<T>[]> points_;
+    std::unique_ptr<Point<T>[]> _vertices;
 
 public:
-    Hexagon() : points_(nullptr) {}
-
-    Hexagon(const Point<T> p[6]) : points_(new Point<T>[6]) {
-        for (size_t i = 0; i < 6; ++i) { points_[i] = p[i]; }
+    Hexagon() : _vertices(nullptr) {}
+    explicit Hexagon(const Point<T> p[6]) : _vertices(new Point<T>[6]) {
+        size_t i = 0;
+        while (i < 6) { _vertices[i] = p[i]; i++; }
     }
-    
-    Hexagon(const Hexagon<T>& src) : points_(new Point<T>[6]) {
-        if (src.points_) {
-            for (size_t i = 0; i < 6; ++i) {
-                points_[i] = src.points_[i];
-            }
-        }
+    Point<T> calculate_center() const override {
+        if (!_vertices) return {0,0};
+        T x_total = 0, y_total = 0;
+        for (size_t i = 0; i < 6; ++i) { x_total += _vertices[i].x; y_total += _vertices[i].y; }
+        return {x_total / 6.0, y_total / 6.0};
     }
-    
-    Hexagon(Hexagon<T>&& src) noexcept : points_(std::move(src.points_)) {}
-
-    Hexagon<T>& operator=(const Hexagon<T>& src) {
-        if (this != &src) {
-            points_.reset(new Point<T>[6]);
-            if (src.points_) {
-                for (size_t i = 0; i < 6; ++i) {
-                    points_[i] = src.points_[i];
-                }
-            }
-        }
-        return *this;
-    }
-
-    Hexagon<T>& operator=(Hexagon<T>&& src) noexcept {
-        if (this != &src) {
-            points_ = std::move(src.points_);
-        }
-        return *this;
-    }
-
-
-    Point<T> center() const override {
-        if (!points_) return {0,0};
-        T sum_x = 0, sum_y = 0;
+    double calculate_area() const override {
+        if (!_vertices) return 0.0;
+        double area = 0.0;
         for (size_t i = 0; i < 6; ++i) {
-            sum_x += points_[i].x;
-            sum_y += points_[i].y;
+            area += (_vertices[i].x * _vertices[(i + 1) % 6].y) - (_vertices[(i + 1) % 6].x * _vertices[i].y);
         }
-        return {sum_x / 6.0, sum_y / 6.0};
+        return std::abs(area) / 2.0;
     }
-
-    double area() const override {
-        if (!points_) return 0.0;
-        double total_area = 0.0;
-        for (size_t i = 0; i < 6; ++i) {
-            Point<T> p1 = points_[i];
-            Point<T> p2 = points_[(i + 1) % 6];
-            total_area += (double)(p1.x * p2.y - p2.x * p1.y);
-        }
-        return std::abs(total_area) / 2.0;
-    }
-
-    void print(std::ostream& os) const override {
-        if (!points_) {
-            os << "Hexagon: [empty]";
-            return;
-        }
-        os << "Hexagon: [";
-        for (size_t i = 0; i < 6; ++i) {
-            os << points_[i] << (i == 5 ? "" : ", ");
-        }
-        os << "]";
+    void display(std::ostream& os) const override {
+        if (!_vertices) { os << "Empty Hexagon"; return; }
+        os << "Hexagon with points: ";
+        for (size_t i = 0; i < 6; ++i) os << _vertices[i] << (i == 5 ? "" : " ");
     }
 };

@@ -1,81 +1,38 @@
 #pragma once
-
 #include "figure.h"
 #include <memory>
 #include <cmath>
 #include <utility>
 
-template <IsArithmetic T>
+template <NumericType T>
 class Octagon : public Figure<T> {
 private:
-    std::unique_ptr<Point<T>[]> points_;
+    std::unique_ptr<Point<T>[]> _vertices;
 
 public:
-    Octagon() : points_(nullptr) {}
-
-    Octagon(const Point<T> p[8]) : points_(new Point<T>[8]) {
-        for (size_t i = 0; i < 8; ++i) { points_[i] = p[i]; }
+    Octagon() : _vertices(nullptr) {}
+    explicit Octagon(const Point<T> p[8]) : _vertices(new Point<T>[8]) {
+        for (size_t i = 0; i < 8; ++i) _vertices[i] = p[i];
     }
-    
-    Octagon(const Octagon<T>& src) : points_(new Point<T>[8]) {
-        if (src.points_) {
-            for (size_t i = 0; i < 8; ++i) {
-                points_[i] = src.points_[i];
-            }
-        }
-    }
-    
-    Octagon(Octagon<T>&& src) noexcept : points_(std::move(src.points_)) {}
-
-    Octagon<T>& operator=(const Octagon<T>& src) {
-        if (this != &src) {
-            points_.reset(new Point<T>[8]);
-            if (src.points_) {
-                for (size_t i = 0; i < 8; ++i) {
-                    points_[i] = src.points_[i];
-                }
-            }
-        }
-        return *this;
-    }
-
-    Octagon<T>& operator=(Octagon<T>&& src) noexcept {
-        if (this != &src) {
-            points_ = std::move(src.points_);
-        }
-        return *this;
-    }
-
-    Point<T> center() const override {
-        if (!points_) return {0,0};
+    Point<T> calculate_center() const override {
+        if (!_vertices) return {0,0};
         T total_x = 0, total_y = 0;
-        for (size_t i = 0; i < 8; ++i) {
-            total_x += points_[i].x;
-            total_y += points_[i].y;
-        }
+        for (size_t i = 0; i < 8; ++i) { total_x += _vertices[i].x; total_y += _vertices[i].y; }
         return {total_x / 8.0, total_y / 8.0};
     }
-
-    double area() const override {
-        if (!points_) return 0.0;
-        double signed_area = 0.0;
+    double calculate_area() const override {
+        if (!_vertices) return 0.0;
+        double area = 0.0;
         for (size_t i = 0; i < 8; ++i) {
-            Point<T> current_pt = points_[i];
-            Point<T> next_pt = points_[(i + 1) % 8];
-            signed_area += (double)(current_pt.x * next_pt.y - next_pt.x * current_pt.y);
+            Point<T> p1 = _vertices[i];
+            Point<T> p2 = _vertices[(i + 1) % 8];
+            area += (p1.x * p2.y) - (p2.x * p1.y);
         }
-        return std::abs(signed_area) / 2.0;
+        return std::abs(area) / 2.0;
     }
-
-    void print(std::ostream& os) const override {
-        if (!points_) {
-            os << "Octagon: [empty]";
-            return;
-        }
-        os << "Octagon: [";
-        for (size_t i = 0; i < 8; ++i) {
-            os << points_[i] << (i == 7 ? "" : ", ");
-        }
-        os << "]";
+    void display(std::ostream& os) const override {
+        if (!_vertices) { os << "Empty Octagon"; return; }
+        os << "Octagon with points: ";
+        for (size_t i = 0; i < 8; ++i) os << _vertices[i] << (i == 7 ? "" : " ");
     }
 };
