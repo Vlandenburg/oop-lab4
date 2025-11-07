@@ -3,58 +3,78 @@
 #include "figure.h"
 #include <memory>
 #include <cmath>
+#include <utility>
 
-template <Scalar T>
+template <IsArithmetic T>
 class Octagon : public Figure<T> {
 private:
-    std::unique_ptr<Point<T>[]> vertices;
+    std::unique_ptr<Point<T>[]> points_;
 
 public:
-    Octagon(const Point<T> p[8]) : vertices(new Point<T>[8]) {
-        for (size_t i = 0; i < 8; ++i) {
-            vertices[i] = p[i];
-        }
-    }
+    Octagon() : points_(nullptr) {}
 
-    Octagon(const Octagon<T>& other) : vertices(new Point<T>[8]) {
-        for (size_t i = 0; i < 8; ++i) {
-            vertices[i] = other.vertices[i];
+    Octagon(const Point<T> p[8]) : points_(new Point<T>[8]) {
+        for (size_t i = 0; i < 8; ++i) { points_[i] = p[i]; }
+    }
+    
+    Octagon(const Octagon<T>& src) : points_(new Point<T>[8]) {
+        if (src.points_) {
+            for (size_t i = 0; i < 8; ++i) {
+                points_[i] = src.points_[i];
+            }
         }
     }
     
-    Octagon<T>& operator=(const Octagon<T>& other) {
-        if (this != &other) {
-            vertices.reset(new Point<T>[8]);
-            for (size_t i = 0; i < 8; ++i) {
-                vertices[i] = other.vertices[i];
+    Octagon(Octagon<T>&& src) noexcept : points_(std::move(src.points_)) {}
+
+    Octagon<T>& operator=(const Octagon<T>& src) {
+        if (this != &src) {
+            points_.reset(new Point<T>[8]);
+            if (src.points_) {
+                for (size_t i = 0; i < 8; ++i) {
+                    points_[i] = src.points_[i];
+                }
             }
         }
         return *this;
     }
 
-    Point<T> center() const override {
-        T sumX = 0, sumY = 0;
-        for (size_t i = 0; i < 8; ++i) {
-            sumX += vertices[i].x;
-            sumY += vertices[i].y;
+    Octagon<T>& operator=(Octagon<T>&& src) noexcept {
+        if (this != &src) {
+            points_ = std::move(src.points_);
         }
-        return {sumX / 8.0, sumY / 8.0};
+        return *this;
+    }
+
+    Point<T> center() const override {
+        if (!points_) return {0,0};
+        T total_x = 0, total_y = 0;
+        for (size_t i = 0; i < 8; ++i) {
+            total_x += points_[i].x;
+            total_y += points_[i].y;
+        }
+        return {total_x / 8.0, total_y / 8.0};
     }
 
     double area() const override {
-        double currentArea = 0.0;
+        if (!points_) return 0.0;
+        double signed_area = 0.0;
         for (size_t i = 0; i < 8; ++i) {
-            Point<T> p1 = vertices[i];
-            Point<T> p2 = vertices[(i + 1) % 8];
-            currentArea += (double)(p1.x * p2.y - p2.x * p1.y);
+            Point<T> current_pt = points_[i];
+            Point<T> next_pt = points_[(i + 1) % 8];
+            signed_area += (double)(current_pt.x * next_pt.y - next_pt.x * current_pt.y);
         }
-        return std::abs(currentArea) / 2.0;
+        return std::abs(signed_area) / 2.0;
     }
 
     void print(std::ostream& os) const override {
+        if (!points_) {
+            os << "Octagon: [empty]";
+            return;
+        }
         os << "Octagon: [";
         for (size_t i = 0; i < 8; ++i) {
-            os << vertices[i] << (i == 7 ? "" : ", ");
+            os << points_[i] << (i == 7 ? "" : ", ");
         }
         os << "]";
     }

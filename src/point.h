@@ -4,21 +4,22 @@
 #include <concepts>
 
 template <typename T>
-concept Scalar = std::is_arithmetic_v<T>;
+concept IsArithmetic = std::is_arithmetic_v<T>;
 
-template <Scalar T>
+template <IsArithmetic CoordType>
 struct Point {
-    T x, y;
+    CoordType x, y;
 };
 
-template <Scalar T>
-std::istream& operator>>(std::istream& is, Point<T>& p) {
-    is >> p.x >> p.y;
+template <IsArithmetic CoordType>
+std::istream& operator>>(std::istream& is, Point<CoordType>& pt) {
+    is >> pt.x >> pt.y;
     return is;
 }
 
-template <Scalar T>
-std::ostream& operator<<(std::ostream& os, const Point<T>& p) {
-    os << "(" << p.x << ", " << p.y << ")";
+// Было: std.ostream - стало std::ostream
+template <IsArithmetic CoordType>
+std::ostream& operator<<(std::ostream& os, const Point<CoordType>& pt) {
+    os << "(" << pt.x << ", " << pt.y << ")";
     return os;
 }

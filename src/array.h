@@ -1,5 +1,3 @@
-// src/array.h
-
 #pragma once
 
 #include <cstddef>
@@ -9,106 +7,104 @@
 template <class T>
 class Array {
 private:
-    T* _data;
-    size_t _size;
-    size_t _capacity;
+    T* elements;
+    size_t count;
+    size_t storage_size;
 
-    void reallocate(size_t new_capacity) {
-        T* new_data = new T[new_capacity]; 
-        for (size_t i = 0; i < _size; ++i) {
-            new_data[i] = std::move(_data[i]);
+    void expand_storage(size_t new_cap) {
+        T* new_elements = new T[new_cap];
+        for (size_t i = 0; i < count; ++i) {
+            new_elements[i] = std::move(elements[i]);
         }
-        delete[] _data;
-        _data = new_data;
-        _capacity = new_capacity;
+        delete[] elements;
+        elements = new_elements;
+        storage_size = new_cap;
     }
 
 public:
-    Array() : _data(nullptr), _size(0), _capacity(0) {}
-
-    explicit Array(size_t capacity) : _data(new T[capacity]), _size(0), _capacity(capacity) {}
+    Array() : elements(nullptr), count(0), storage_size(0) {}
 
     ~Array() {
-        delete[] _data;
+        delete[] elements;
     }
 
-    Array(const Array& other) : _data(new T[other._capacity]), _size(other._size), _capacity(other._capacity) {
-        for (size_t i = 0; i < _size; ++i) {
-            _data[i] = other._data[i];
+    Array(const Array& other) : elements(new T[other.storage_size]), count(other.count), storage_size(other.storage_size) {
+        for (size_t i = 0; i < count; ++i) {
+            elements[i] = other.elements[i];
         }
     }
 
     Array& operator=(const Array& other) {
         if (this != &other) {
-            delete[] _data;
-            _data = new T[other._capacity];
-            _size = other._size;
-            _capacity = other._capacity;
-            for (size_t i = 0; i < _size; ++i) {
-                _data[i] = other._data[i];
+            delete[] elements;
+            elements = new T[other.storage_size];
+            count = other.count;
+            storage_size = other.storage_size;
+            for (size_t i = 0; i < count; ++i) {
+                elements[i] = other.elements[i];
             }
         }
         return *this;
     }
     
-    Array(Array&& other) noexcept : _data(other._data), _size(other._size), _capacity(other._capacity) {
-        other._data = nullptr;
-        other._size = 0;
-        other._capacity = 0;
+    Array(Array&& other) noexcept : elements(other.elements), count(other.count), storage_size(other.storage_size) {
+        other.elements = nullptr;
+        other.count = 0;
+        other.storage_size = 0;
     }
     
     Array& operator=(Array&& other) noexcept {
         if (this != &other) {
-            delete[] _data;
-            _data = other._data;
-            _size = other._size;
-            _capacity = other._capacity;
-            other._data = nullptr;
-            other._size = 0;
-            other._capacity = 0;
+            delete[] elements;
+            elements = other.elements;
+            count = other.count;
+            storage_size = other.storage_size;
+            other.elements = nullptr;
+            other.count = 0;
+            other.storage_size = 0;
         }
         return *this;
     }
 
-    void push_back(const T& value) {
-        if (_size == _capacity) {
-            reallocate(_capacity == 0 ? 1 : _capacity * 2);
+    void push_back(const T& val) {
+        if (count == storage_size) {
+            expand_storage(storage_size == 0 ? 1 : storage_size * 2);
         }
-        _data[_size++] = value;
+        elements[count++] = val;
     }
 
-    void push_back(T&& value) {
-        if (_size == _capacity) {
-            reallocate(_capacity == 0 ? 1 : _capacity * 2);
+    void push_back(T&& val) {
+        if (count == storage_size) {
+            expand_storage(storage_size == 0 ? 1 : storage_size * 2);
         }
-        _data[_size++] = std::move(value);
+        elements[count++] = std::move(val);
     }
 
-    void erase(size_t index) {
-        if (index >= _size) {
-            throw std::out_of_range("Erase index is out of range");
+    void erase(size_t idx) {
+        if (idx >= count) {
+            throw std::out_of_range("Index is out of array bounds");
         }
-        for (size_t i = index; i < _size - 1; ++i) {
-            _data[i] = std::move(_data[i + 1]);
+        for (size_t i = idx; i < count - 1; ++i) {
+            elements[i] = std::move(elements[i + 1]);
         }
-        --_size;
+        --count;
     }
 
-    T& operator[](size_t index) {
-        if (index >= _size) {
-            throw std::out_of_range("Access index is out of range");
+    T& operator[](size_t idx) {
+        if (idx >= count) {
+            throw std::out_of_range("Index is out of array bounds");
         }
-        return _data[index];
+        return elements[idx];
     }
 
-    const T& operator[](size_t index) const {
-        if (index >= _size) {
-            throw std::out_of_range("Access index is out of range");
+    const T& operator[](size_t idx) const {
+        if (idx >= count) {
+            throw std::out_of_range("Index is out of array bounds");
         }
-        return _data[index];
+        return elements[idx];
     }
 
     size_t size() const {
-        return _size;
+        return count;
     }
 };

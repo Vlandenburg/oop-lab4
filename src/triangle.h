@@ -1,92 +1,78 @@
-// src/triangle.h
-
 #pragma once
 
 #include "figure.h"
 #include <memory>
 #include <cmath>
 #include <stdexcept>
-#include <utility> // <-- Добавьте для std::move
+#include <utility>
 
-template <Scalar T>
+template <IsArithmetic T>
 class Triangle : public Figure<T> {
 private:
-    std::unique_ptr<Point<T>[]> vertices;
+    std::unique_ptr<Point<T>[]> points_;
 
-    static double calculate_area(const Point<T>& p1, const Point<T>& p2, const Point<T>& p3) {
-         return 0.5 * std::abs(
-            p1.x * (p2.y - p3.y) +
-            p2.x * (p3.y - p1.y) +
-            p3.x * (p1.y - p2.y)
-        );
+    static double calc_s(const Point<T>& a, const Point<T>& b, const Point<T>& c) {
+        double part1 = a.x * (b.y - c.y);
+        double part2 = b.x * (c.y - a.y);
+        double part3 = c.x * (a.y - b.y);
+        return 0.5 * std::abs(part1 + part2 + part3);
     }
 
 public:
-    
-
-    
-    Triangle() : vertices(nullptr) {}
-
-    
+    Triangle() : points_(nullptr) {}
 
     Triangle(const Point<T>& p1, const Point<T>& p2, const Point<T>& p3) {
-        if (calculate_area(p1, p2, p3) < 1e-9) {
-            throw std::invalid_argument("Points are collinear, cannot form a triangle.");
+        if (calc_s(p1, p2, p3) < 1e-9) {
+            throw std::invalid_argument("Cannot form a triangle, points are on the same line.");
         }
-        vertices = std::make_unique<Point<T>[]>(3);
-        vertices[0] = p1;
-        vertices[1] = p2;
-        vertices[2] = p3;
+        points_ = std::make_unique<Point<T>[]>(3);
+        points_[0] = p1;
+        points_[1] = p2;
+        points_[2] = p3;
     }
 
-    Triangle(const Triangle<T>& other) : vertices(new Point<T>[3]) {
+    Triangle(const Triangle<T>& src) : points_(new Point<T>[3]) {
         for (size_t i = 0; i < 3; ++i) {
-            vertices[i] = other.vertices[i];
+            points_[i] = src.points_[i];
         }
     }
     
-    
+    Triangle(Triangle<T>&& src) noexcept : points_(std::move(src.points_)) {}
 
-    
-    Triangle(Triangle<T>&& other) noexcept : vertices(std::move(other.vertices)) {}
-
-    
-    Triangle<T>& operator=(Triangle<T>&& other) noexcept {
-        if (this != &other) {
-            vertices = std::move(other.vertices);
+    Triangle<T>& operator=(Triangle<T>&& src) noexcept {
+        if (this != &src) {
+            points_ = std::move(src.points_);
         }
         return *this;
     }
 
-    
-
-    Triangle<T>& operator=(const Triangle<T>& other) {
-        if (this != &other) {
-            vertices.reset(new Point<T>[3]);
+    Triangle<T>& operator=(const Triangle<T>& src) {
+        if (this != &src) {
+            points_.reset(new Point<T>[3]);
             for (size_t i = 0; i < 3; ++i) {
-                vertices[i] = other.vertices[i];
+                points_[i] = src.points_[i];
             }
         }
         return *this;
     }
 
     Point<T> center() const override {
-        if (!vertices) return {0,0}; // Защита для объектов по умолчанию
-        T centerX = (vertices[0].x + vertices[1].x + vertices[2].x) / 3.0;
-        T centerY = (vertices[0].y + vertices[1].y + vertices[2].y) / 3.0;
-        return {centerX, centerY};
+        if (!points_) return {0,0};
+        T cx = (points_[0].x + points_[1].x + points_[2].x) / 3.0;
+        T cy = (points_[0].y + points_[1].y + points_[2].y) / 3.0;
+        return {cx, cy};
     }
 
     double area() const override {
-        if (!vertices) return 0.0; // Защита для объектов по умолчанию
-        return calculate_area(vertices[0], vertices[1], vertices[2]);
+        if (!points_) return 0.0;
+        return calc_s(points_[0], points_[1], points_[2]);
     }
 
-    void print(std::ostream& os) const override {
-        if (!vertices) {
-            os << "Triangle: [empty]";
+    void print(std::ostream& stream) const override {
+        if (!points_) {
+            stream << "Triangle: [empty]";
             return;
         }
-        os << "Triangle: [" << vertices[0] << ", " << vertices[1] << ", " << vertices[2] << "]";
+        stream << "Triangle: [" << points_[0] << ", " << points_[1] << ", " << points_[2] << "]";
     }
 };
