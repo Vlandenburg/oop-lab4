@@ -1,29 +1,31 @@
 #pragma once
 #include "figure.h"
-#include <memory>
 #include <cmath>
 
-template <IsNumber T>
-class Hexagon : public GeometricFigure<T> {
+template <Number T>
+class Hexagon : public Figure<T> {
 private:
-    std::unique_ptr<Point2D<T>[]> m_points;
+    Point<T>* points;
 public:
-    Hexagon() : m_points(nullptr) {}
-    explicit Hexagon(const Point2D<T> p[6]) : m_points(std::make_unique<Point2D<T>[]>(6)) {
-        for (size_t i = 0; i < 6; ++i) m_points[i] = p[i];
+    Hexagon() : points(nullptr) {}
+    explicit Hexagon(const Point<T> p[6]) {
+        points = new Point<T>[6];
+        for (int i = 0; i < 6; ++i) points[i] = p[i];
     }
-    Point2D<T> getCenter() const override {
-        T sx = 0, sy = 0; for (size_t i = 0; i < 6; ++i) { sx += m_points[i].x; sy += m_points[i].y; }
-        return {sx / 6.0, sy / 6.0};
+    ~Hexagon() { delete[] points; }
+
+    void get_center(T* outX, T* outY) const override {
+        T x=0, y=0; for (int i=0; i<6; ++i) { x+=points[i].X; y+=points[i].Y; }
+        *outX = x / 6.; *outY = y / 6.;
     }
-    double getArea() const override {
-        double area_val = 0;
-        for (size_t i = 0; i < 6; ++i) {
-            area_val += (m_points[i].x * m_points[(i + 1) % 6].y) - (m_points[(i + 1) % 6].x * m_points[i].y);
+    double get_area() const override {
+        double area = 0;
+        for (int i=0; i<6; ++i) {
+            area += (points[i].X * points[(i + 1) % 6].Y) - (points[(i + 1) % 6].X * points[i].Y);
         }
-        return std::abs(area_val) * 0.5;
+        return std::abs(area) * 0.5;
     }
-    void printDescription(std::ostream& os) const override {
-        os << "Hexagon, points: "; for (size_t i = 0; i < 6; ++i) os << m_points[i] << " ";
+    void print(std::ostream& os) const override {
+        os << "Hexagon: "; for (int i = 0; i < 6; ++i) os << points[i] << " ";
     }
 };

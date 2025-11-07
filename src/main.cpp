@@ -1,121 +1,77 @@
 #include <iostream>
 #include <string>
 #include <memory>
-#include <limits>
-#include <stdexcept>
-#include <map>
-#include <functional>
+#include <vector> // Using for points, not for main array
+#include <cstring>
 #include "array.h"
 #include "figure.h"
 #include "triangle.h"
 #include "hexagon.h"
 #include "octagon.h"
 
-using FigPtr = std::shared_ptr<GeometricFigure<double>>;
-using FigList = Vectorish<FigPtr>;
+using SmartFig = std::shared_ptr<Figure<double>>;
 
-// Ломаем структуру if-else с помощью std::map
-using Command = std::function<void(FigList&)>;
-
-void addTriangle(FigList& figures) {
-    Point2D<double> p[3];
-    std::cout << "Enter 3 coords for triangle: ";
-    for (int i = 0; i < 3; ++i) std::cin >> p[i];
-    if (std::cin.fail()) {
-        std::cin.clear(); std::cin.ignore(10000, '\n');
-        std::cout << "Bad input.\n"; return;
+template<typename T>
+bool read_points(std::vector<Point<T>>& points, int count) {
+    std::cout << "enter " << count << " points (x y):\n";
+    for (int i = 0; i < count; ++i) {
+        Point<T> p;
+        std::cin >> p;
+        if (std::cin.fail()) {
+            std::cin.clear();
+            std::cin.ignore(1000, '\n');
+            std::cout << "bad input\n";
+            return false;
+        }
+        points.push_back(p);
     }
-    figures.push(std::make_shared<Triangle<double>>(p[0], p[1], p[2]));
-    std::cout << "Triangle added.\n";
-}
-
-void addHexagon(FigList& figures) {
-    Point2D<double> p[6];
-    std::cout << "Enter 6 coords for hexagon: ";
-    for (int i = 0; i < 6; ++i) std::cin >> p[i];
-    if (std::cin.fail()) {
-        std::cin.clear(); std::cin.ignore(10000, '\n');
-        std::cout << "Bad input.\n"; return;
-    }
-    figures.push(std::make_shared<Hexagon<double>>(p));
-    std::cout << "Hexagon added.\n";
-}
-
-void addOctagon(FigList& figures) {
-    Point2D<double> p[8];
-    std::cout << "Enter 8 coords for octagon: ";
-    for (int i = 0; i < 8; ++i) std::cin >> p[i];
-    if (std::cin.fail()) {
-        std::cin.clear(); std::cin.ignore(10000, '\n');
-        std::cout << "Bad input.\n"; return;
-    }
-    figures.push(std::make_shared<Octagon<double>>(p));
-    std::cout << "Octagon added.\n";
-}
-
-void listFigures(FigList& figures) {
-    if (figures.length() == 0) { std::cout << "Nothing to show.\n"; return; }
-    std::cout << "--- Your figures ---\n";
-    for(size_t i = 0; i < figures.length(); ++i) {
-        std::cout << i << ": ";
-        figures.at(i)->printDescription(std::cout);
-        std::cout << std::endl;
-    }
-}
-
-void deleteFigure(FigList& figures) {
-    size_t idx;
-    std::cout << "Index to delete: "; std::cin >> idx;
-    if (std::cin.fail() || idx >= figures.length()) {
-        std::cout << "Invalid index.\n";
-        if(std::cin.fail()) { std::cin.clear(); std::cin.ignore(10000, '\n'); }
-        return;
-    }
-    figures.pop_at(idx);
-    std::cout << "Figure removed.\n";
-}
-
-void showTotalArea(FigList& figures) {
-    double total = 0;
-    for (size_t i = 0; i < figures.length(); ++i) {
-        total += figures.at(i)->getArea();
-    }
-    std::cout << "Total area: " << total << std::endl;
+    return true;
 }
 
 int main() {
-    FigList myFigures;
-    std::string input;
+    Storage<SmartFig> figures;
+    char input_buffer[100];
 
-    // Очень нетипичная для AI структура диспетчеризации команд
-    std::map<std::string, Command> commands;
-    commands["add_triangle"] = addTriangle;
-    commands["add_hexagon"] = addHexagon;
-    commands["add_octagon"] = addOctagon;
-    commands["list"] = listFigures;
-    commands["delete"] = deleteFigure;
-    commands["area"] = showTotalArea;
-
-    std::cout << "Simple Figure Editor. Commands: add_triangle, list, delete, area, exit.\n";
+    std::cout << "figure editor. commands: add_tri, add_hex, add_oct, list, del, area, exit\n";
     
     while(true) {
-        std::cout << ">> ";
-        std::cin >> input;
+        std::cout << "> ";
+        std::cin >> input_buffer;
         
-        if (input == "exit") {
+        if (strcmp(input_buffer, "exit") == 0) {
             break;
-        }
-
-        // std::cout << "DEBUG: command='" << input << "'" << std::endl; // Человеческий "мусор"
-        
-        if (commands.count(input)) {
-            try {
-                commands[input](myFigures);
-            } catch (const std::exception& e) {
-                std::cout << "An error occurred: " << e.what() << std::endl;
+        } else if (strcmp(input_buffer, "add_tri") == 0) {
+            std::vector<Point<double>> pts;
+            if (read_points(pts, 3)) {
+                figures.add(std::make_shared<Triangle<double>>(pts[0], pts[1], pts[2]));
             }
+        } else if (strcmp(input_buffer, "add_hex") == 0) {
+            std::vector<Point<double>> pts;
+            if (read_points(pts, 6)) {
+                figures.add(std::make_shared<Hexagon<double>>(pts.data()));
+            }
+        } else if (strcmp(input_buffer, "add_oct") == 0) {
+            std::vector<Point<double>> pts;
+            if (read_points(pts, 8)) {
+                figures.add(std::make_shared<Octagon<double>>(pts.data()));
+            }
+        } else if (strcmp(input_buffer, "list") == 0) {
+            for (size_t i = 0; i < figures.count(); ++i) {
+                double c_x, c_y;
+                figures[i]->get_center(&c_x, &c_y);
+                std::cout << i << " -> ";
+                figures[i]->print(std::cout);
+                std::cout << " | center: (" << c_x << "," << c_y << "), area: " << figures[i]->get_area() << std::endl;
+            }
+        } else if (strcmp(input_buffer, "del") == 0) {
+            size_t i; std::cin >> i;
+            figures.remove(i);
+        } else if (strcmp(input_buffer, "area") == 0) {
+            double total = 0;
+            for(size_t i = 0; i < figures.count(); ++i) total += figures[i]->get_area();
+            std::cout << "total area = " << total << std::endl;
         } else {
-            std::cout << "Unknown command.\n";
+            std::cout << "what?\n";
         }
     }
 

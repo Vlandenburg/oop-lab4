@@ -1,36 +1,49 @@
 #pragma once
 #include "figure.h"
-#include <memory>
+#include "point.h"
 #include <cmath>
-#include <stdexcept>
-#include <utility>
 
-template <IsNumber ValType>
-class Triangle : public GeometricFigure<ValType> {
+#define TRIANGLE_POINTS 3
+
+template <Number T>
+class Triangle : public Figure<T> {
 private:
-    std::unique_ptr<Point2D<ValType>[]> m_points;
+    Point<T>* m_vertices;
 
 public:
-    Triangle() : m_points(nullptr) {}
-    Triangle(const Point2D<ValType>& a, const Point2D<ValType>& b, const Point2D<ValType>& c) {
-        m_points = std::make_unique<Point2D<ValType>[]>(3);
-        Point2D<ValType> temp_pts[] = {a, b, c};
-        for(int i = 0; i < 3; ++i) m_points[i] = temp_pts[i];
+    Triangle() : m_vertices(nullptr) {}
+    Triangle(Point<T> p1, Point<T> p2, Point<T> p3) {
+        m_vertices = new Point<T>[TRIANGLE_POINTS];
+        m_vertices[0] = p1; m_vertices[1] = p2; m_vertices[2] = p3;
+    }
+    ~Triangle() { delete[] m_vertices; }
+
+    Triangle(const Triangle& other) {
+        m_vertices = new Point<T>[TRIANGLE_POINTS];
+        for(int i = 0; i < TRIANGLE_POINTS; ++i) m_vertices[i] = other.m_vertices[i];
+    }
+    Triangle& operator=(const Triangle& other) {
+        if (this == &other) return *this;
+        delete[] m_vertices;
+        m_vertices = new Point<T>[TRIANGLE_POINTS];
+        for(int i = 0; i < TRIANGLE_POINTS; ++i) m_vertices[i] = other.m_vertices[i];
+        return *this;
     }
 
-    Point2D<ValType> getCenter() const override {
-        if (!m_points) return {0,0};
-        auto x_sum = m_points[0].x + m_points[1].x + m_points[2].x;
-        auto y_sum = m_points[0].y + m_points[1].y + m_points[2].y;
-        return {x_sum / 3.0, y_sum / 3.0};
+    void get_center(T* outX, T* outY) const override {
+        if (!m_vertices) { *outX = 0; *outY = 0; return; }
+        *outX = (m_vertices[0].X + m_vertices[1].X + m_vertices[2].X) / 3.0;
+        *outY = (m_vertices[0].Y + m_vertices[1].Y + m_vertices[2].Y) / 3.0;
     }
-    double getArea() const override {
-        if (!m_points) return 0.0;
-        auto p1 = m_points[0]; auto p2 = m_points[1]; auto p3 = m_points[2];
-        return 0.5 * std::abs(p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y));
+    double get_area() const override {
+        if (!m_vertices) return 0.0;
+        double term1 = m_vertices[0].X * (m_vertices[1].Y - m_vertices[2].Y);
+        double term2 = m_vertices[1].X * (m_vertices[2].Y - m_vertices[0].Y);
+        double term3 = m_vertices[2].X * (m_vertices[0].Y - m_vertices[1].Y);
+        return 0.5 * std::abs(term1 + term2 + term3);
     }
-    void printDescription(std::ostream& os) const override {
-        if (!m_points) { os << "Triangle (uninitialized)"; return; }
-        os << "Triangle, points: " << m_points[0] << m_points[1] << m_points[2];
+    void print(std::ostream& os) const override {
+        if (!m_vertices) return;
+        os << "Triangle: " << m_vertices[0] << " " << m_vertices[1] << " " << m_vertices[2];
     }
 };

@@ -2,22 +2,19 @@
 #include "point.h"
 #include <iostream>
 
-template <IsNumber ValType>
-class GeometricFigure {
+template <Number T>
+class Figure {
 public:
-    virtual ~GeometricFigure() = default;
-    
-    virtual void printDescription(std::ostream& os) const = 0;
-    virtual Point2D<ValType> getCenter() const = 0;
-    virtual double getArea() const = 0;
+    virtual ~Figure() = default;
+    virtual void print(std::ostream& os) const = 0;
+    virtual void get_center(T* outX, T* outY) const = 0;
+    virtual double get_area() const = 0;
 
-    explicit operator double() const {
-        return getArea();
-    }
+    explicit operator double() const { return get_area(); }
 };
 
-template <IsNumber T>
-std::ostream& operator<<(std::ostream& os, const GeometricFigure<T>& fig) {
-    fig.printDescription(os);
+template <Number T>
+std::ostream& operator<<(std::ostream& os, const Figure<T>& fig) {
+    fig.print(os);
     return os;
 }
