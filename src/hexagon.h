@@ -2,36 +2,28 @@
 #include "figure.h"
 #include <memory>
 #include <cmath>
-#include <utility>
 
-template <NumericType T>
-class Hexagon : public Figure<T> {
+template <IsNumber T>
+class Hexagon : public GeometricFigure<T> {
 private:
-    std::unique_ptr<Point<T>[]> _vertices;
-
+    std::unique_ptr<Point2D<T>[]> m_points;
 public:
-    Hexagon() : _vertices(nullptr) {}
-    explicit Hexagon(const Point<T> p[6]) : _vertices(new Point<T>[6]) {
-        size_t i = 0;
-        while (i < 6) { _vertices[i] = p[i]; i++; }
+    Hexagon() : m_points(nullptr) {}
+    explicit Hexagon(const Point2D<T> p[6]) : m_points(std::make_unique<Point2D<T>[]>(6)) {
+        for (size_t i = 0; i < 6; ++i) m_points[i] = p[i];
     }
-    Point<T> calculate_center() const override {
-        if (!_vertices) return {0,0};
-        T x_total = 0, y_total = 0;
-        for (size_t i = 0; i < 6; ++i) { x_total += _vertices[i].x; y_total += _vertices[i].y; }
-        return {x_total / 6.0, y_total / 6.0};
+    Point2D<T> getCenter() const override {
+        T sx = 0, sy = 0; for (size_t i = 0; i < 6; ++i) { sx += m_points[i].x; sy += m_points[i].y; }
+        return {sx / 6.0, sy / 6.0};
     }
-    double calculate_area() const override {
-        if (!_vertices) return 0.0;
-        double area = 0.0;
+    double getArea() const override {
+        double area_val = 0;
         for (size_t i = 0; i < 6; ++i) {
-            area += (_vertices[i].x * _vertices[(i + 1) % 6].y) - (_vertices[(i + 1) % 6].x * _vertices[i].y);
+            area_val += (m_points[i].x * m_points[(i + 1) % 6].y) - (m_points[(i + 1) % 6].x * m_points[i].y);
         }
-        return std::abs(area) / 2.0;
+        return std::abs(area_val) * 0.5;
     }
-    void display(std::ostream& os) const override {
-        if (!_vertices) { os << "Empty Hexagon"; return; }
-        os << "Hexagon with points: ";
-        for (size_t i = 0; i < 6; ++i) os << _vertices[i] << (i == 5 ? "" : " ");
+    void printDescription(std::ostream& os) const override {
+        os << "Hexagon, points: "; for (size_t i = 0; i < 6; ++i) os << m_points[i] << " ";
     }
 };

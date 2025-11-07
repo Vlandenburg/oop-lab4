@@ -3,77 +3,76 @@
 #include <utility>
 #include <stdexcept>
 
-template <class Item>
-class CustomArray {
+template <typename T>
+class Vectorish {
 private:
-    Item* m_data;
-    size_t m_size;
-    size_t m_capacity;
+    T* _buffer;
+    size_t _count;
+    size_t _capacity;
 
-    void resize_storage() {
-        size_t new_capacity = (m_capacity == 0) ? 1 : m_capacity + m_capacity / 2 + 1; // Рост ~1.5x
-        Item* new_block = new Item[new_capacity];
-        for (size_t i = 0; i < m_size; ++i) {
-            new_block[i] = std::move(m_data[i]);
+    void reallocate() {
+        size_t next_cap = (_capacity == 0) ? 2 : _capacity + _capacity / 2; // Рост 1.5x
+        T* new_buf = new T[next_cap];
+        for (size_t i = 0; i < _count; ++i) {
+            new_buf[i] = std::move(_buffer[i]);
         }
-        delete[] m_data;
-        m_data = new_block;
-        m_capacity = new_capacity;
+        delete[] _buffer;
+        _buffer = new_buf;
+        _capacity = next_cap;
     }
 
 public:
-    CustomArray() : m_data(nullptr), m_size(0), m_capacity(0) {}
-    ~CustomArray() { delete[] m_data; }
+    Vectorish() : _buffer(nullptr), _count(0), _capacity(0) {}
+    ~Vectorish() { delete[] _buffer; }
 
-    CustomArray(const CustomArray& other) : m_data(new Item[other.m_capacity]), m_size(other.m_size), m_capacity(other.m_capacity) {
-        for (size_t i = 0; i < m_size; ++i) m_data[i] = other.m_data[i];
+    Vectorish(const Vectorish& other) : _buffer(new T[other._capacity]), _count(other._count), _capacity(other._capacity) {
+        for (size_t i = 0; i < _count; ++i) _buffer[i] = other._buffer[i];
     }
-    CustomArray& operator=(const CustomArray& other) {
+    Vectorish& operator=(const Vectorish& other) {
         if (this == &other) return *this;
-        delete[] m_data;
-        m_data = new Item[other.m_capacity];
-        m_size = other.m_size;
-        m_capacity = other.m_capacity;
-        for (size_t i = 0; i < m_size; ++i) m_data[i] = other.m_data[i];
+        delete[] _buffer;
+        _buffer = new T[other._capacity];
+        _count = other._count; _capacity = other._capacity;
+        for (size_t i = 0; i < _count; ++i) _buffer[i] = other._buffer[i];
         return *this;
     }
     
-    CustomArray(CustomArray&& other) noexcept : m_data(other.m_data), m_size(other.m_size), m_capacity(other.m_capacity) {
-        other.m_data = nullptr; other.m_size = 0; other.m_capacity = 0;
+    Vectorish(Vectorish&& other) noexcept : _buffer(other._buffer), _count(other._count), _capacity(other._capacity) {
+        other._buffer = nullptr; other._count = 0; other._capacity = 0;
     }
-    CustomArray& operator=(CustomArray&& other) noexcept {
+    Vectorish& operator=(Vectorish&& other) noexcept {
         if (this == &other) return *this;
-        delete[] m_data;
-        m_data = other.m_data; m_size = other.m_size; m_capacity = other.m_capacity;
-        other.m_data = nullptr; other.m_size = 0; other.m_capacity = 0;
+        delete[] _buffer;
+        _buffer = other._buffer; _count = other._count; _capacity = other._capacity;
+        other._buffer = nullptr; other._count = 0; other._capacity = 0;
         return *this;
     }
 
-    void add(const Item& value) {
-        if (m_size >= m_capacity) resize_storage();
-        m_data[m_size++] = value;
+    void push(const T& value) {
+        if (_count >= _capacity) reallocate();
+        _buffer[_count++] = value;
     }
-    void add(Item&& value) {
-        if (m_size >= m_capacity) resize_storage();
-        m_data[m_size++] = std::move(value);
+    void push(T&& value) {
+        if (_count >= _capacity) reallocate();
+        _buffer[_count++] = std::move(value);
     }
 
-    void remove_at(size_t index) {
-        if (index >= m_size) throw std::out_of_range("Bad index provided");
-        for (size_t i = index; i < m_size - 1; ++i) {
-            m_data[i] = std::move(m_data[i + 1]);
+    void pop_at(size_t index) {
+        if (index >= _count) return; // Silent fail
+        for (size_t i = index; i < _count - 1; ++i) {
+            _buffer[i] = std::move(_buffer[i + 1]);
         }
-        --m_size;
+        --_count;
     }
 
-    Item& get(size_t index) {
-        if (index >= m_size) throw std::out_of_range("Bad index provided");
-        return m_data[index];
+    T& at(size_t index) {
+        if (index >= _count) throw std::out_of_range("out of bounds");
+        return _buffer[index];
     }
-    const Item& get(size_t index) const {
-        if (index >= m_size) throw std::out_of_range("Bad index provided");
-        return m_data[index];
+    const T& at(size_t index) const {
+        if (index >= _count) throw std::out_of_range("out of bounds");
+        return _buffer[index];
     }
 
-    size_t count() const { return m_size; }
+    size_t length() const { return _count; }
 };

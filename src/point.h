@@ -2,22 +2,22 @@
 #include <iostream>
 #include <concepts>
 
-template <typename Number>
-concept NumericType = std::is_arithmetic_v<Number>;
+template <typename T>
+concept IsNumber = std::is_arithmetic_v<T>;
 
-template <NumericType U>
-struct Point {
-    U x, y;
+template <IsNumber ScalarType>
+struct Point2D {
+    ScalarType x, y;
 };
 
-template <NumericType U>
-std::istream& operator>>(std::istream& input, Point<U>& p) {
-    input >> p.x >> p.y;
-    return input;
+template <IsNumber T>
+std::istream& operator>>(std::istream& in, Point2D<T>& p) {
+    in >> p.x >> p.y;
+    return in;
 }
 
-template <NumericType U>
-std::ostream& operator<<(std::ostream& output, const Point<U>& p) {
-    output << "[" << p.x << ";" << p.y << "]";
-    return output;
+template <IsNumber T>
+std::ostream& operator<<(std::ostream& out, const Point2D<T>& p) {
+    out << "{" << p.x << ", " << p.y << "}";
+    return out;
 }
