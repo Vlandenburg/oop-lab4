@@ -7,26 +7,27 @@
 #include "hexagon.h"
 #include "octagon.h"
 
-int main() {
-    // Point test
-    Point<int> p{10, 20};
-    assert(p.X == 10 && p.Y == 20);
-    
-    // Array test
-    Storage<int> v;
-    assert(v.count() == 0);
-    v.add(1); v.add(2); v.add(3);
-    assert(v.count() == 3);
-    v.remove(1);
-    assert(v[1] == 3);
+void array_tests() {
+    Array<int> arr;
+    arr.push_back(1);
+    arr.push_back(2);
+    arr.push_back(3);
+    assert(arr.size() == 3);
+    arr.erase(1);
+    assert(arr.size() == 2);
+    assert(arr[1] == 3);
+}
 
-    // Figure test
+void figure_tests() {
     Triangle<double> t({0,0}, {4,0}, {0,3});
-    assert(t.get_area() == 6.0);
-    double cx, cy;
-    t.get_center(&cx, &cy);
-    assert(abs(cx - 4.0/3.0) < 1e-9);
+    assert(t.area() == 6.0);
+    Point<double> tc = t.center();
+    assert(abs(tc.x - 4.0/3.0) < 1e-9);
+}
 
-    std::cout << "Tests OK\n";
+int main() {
+    array_tests();
+    figure_tests();
+    std::cout << "Tests passed\n";
     return 0;
 }

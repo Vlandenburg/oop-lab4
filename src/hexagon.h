@@ -2,30 +2,33 @@
 #include "figure.h"
 #include <cmath>
 
-template <Number T>
+template<is_numeric T>
 class Hexagon : public Figure<T> {
 private:
-    Point<T>* points;
-public:
-    Hexagon() : points(nullptr) {}
-    explicit Hexagon(const Point<T> p[6]) {
-        points = new Point<T>[6];
-        for (int i = 0; i < 6; ++i) points[i] = p[i];
-    }
-    ~Hexagon() { delete[] points; }
+    Point<T> _vertices[6];
 
-    void get_center(T* outX, T* outY) const override {
-        T x=0, y=0; for (int i=0; i<6; ++i) { x+=points[i].X; y+=points[i].Y; }
-        *outX = x / 6.; *outY = y / 6.;
+public:
+    Hexagon() = default;
+    explicit Hexagon(const Point<T> p[6]) {
+        for (int i = 0; i < 6; ++i) _vertices[i] = p[i];
     }
-    double get_area() const override {
-        double area = 0;
-        for (int i=0; i<6; ++i) {
-            area += (points[i].X * points[(i + 1) % 6].Y) - (points[(i + 1) % 6].X * points[i].Y);
+
+    Point<T> center() const override {
+        T sx = 0, sy = 0;
+        for(int i = 0; i < 6; ++i) { sx += _vertices[i].x; sy += _vertices[i].y; }
+        return {sx / 6, sy / 6};
+    }
+
+    double area() const override {
+        double current_area = 0.0;
+        for (int i = 0; i < 6; ++i) {
+            current_area += (_vertices[i].x * _vertices[(i + 1) % 6].y) - (_vertices[(i + 1) % 6].x * _vertices[i].y);
         }
-        return std::abs(area) * 0.5;
+        return std::abs(current_area) / 2.0;
     }
+
     void print(std::ostream& os) const override {
-        os << "Hexagon: "; for (int i = 0; i < 6; ++i) os << points[i] << " ";
+        os << "Hexagon: ";
+        for (int i = 0; i < 6; ++i) os << _vertices[i] << (i == 5 ? "" : ", ");
     }
 };

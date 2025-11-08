@@ -2,16 +2,22 @@
 #include <iostream>
 #include <concepts>
 
-template <typename T>
-concept Number = std::is_arithmetic_v<T>;
+template<typename T>
+concept is_numeric = std::is_arithmetic_v<T>;
 
-template <Number T>
+template<is_numeric T>
 struct Point {
-    T X, Y;
+    T x, y;
 };
 
-template <Number T>
-std::istream& operator>>(std::istream& in, Point<T>& p) { in >> p.X >> p.Y; return in; }
+template<is_numeric T>
+std::istream& operator>>(std::istream& is, Point<T>& p) {
+    is >> p.x >> p.y;
+    return is;
+}
 
-template <Number T>
-std::ostream& operator<<(std::ostream& out, const Point<T>& p) { out << "(" << p.X << ", " << p.Y << ")"; return out; }
+template<is_numeric T>
+std::ostream& operator<<(std::ostream& os, const Point<T>& p) {
+    os << "(" << p.x << ", " << p.y << ")";
+    return os;
+}
