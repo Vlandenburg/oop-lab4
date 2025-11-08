@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <concepts>
+#include <cmath>
 
 template<typename T>
 concept is_numeric = std::is_arithmetic_v<T>;
@@ -8,6 +9,10 @@ concept is_numeric = std::is_arithmetic_v<T>;
 template<is_numeric T>
 struct Point {
     T x, y;
+
+    bool operator==(const Point<T>& other) const {
+        return (std::abs(x - other.x) < 1e-6) && (std::abs(y - other.y) < 1e-6);
+    }
 };
 
 template<is_numeric T>

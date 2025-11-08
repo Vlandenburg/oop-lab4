@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include "point.h"
 
 template<is_numeric T>
@@ -6,9 +7,11 @@ class Figure {
 public:
     virtual ~Figure() = default;
 
-    virtual void print(std::ostream& os) const = 0;
     virtual Point<T> center() const = 0;
     virtual double area() const = 0;
+    
+    virtual void print(std::ostream& os) const = 0;
+    virtual void print_vertices(std::ostream& os) const = 0;
 
     explicit operator double() const {
         return area();

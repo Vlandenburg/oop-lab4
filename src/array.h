@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <utility>
+#include <stdexcept>
 
 template<class T>
 class Array {
@@ -22,7 +23,53 @@ private:
 public:
     Array() : _data(nullptr), _size(0), _capacity(0) {}
 
+    Array(const Array& other) : _size(other._size), _capacity(other._capacity) {
+        _data = new T[_capacity];
+        for (size_t i = 0; i < _size; ++i) {
+            _data[i] = other._data[i];
+        }
+    }
+
+    Array(Array&& other) noexcept : _data(other._data), _size(other._size), _capacity(other._capacity) {
+        other._data = nullptr;
+        other._size = 0;
+        other._capacity = 0;
+    }
+
+    Array& operator=(const Array& other) {
+        if (this != &other) {
+            delete[] _data;
+            _size = other._size;
+            _capacity = other._capacity;
+            _data = new T[_capacity];
+            for (size_t i = 0; i < _size; ++i) {
+                _data[i] = other._data[i];
+            }
+        }
+        return *this;
+    }
+
+    Array& operator=(Array&& other) noexcept {
+        if (this != &other) {
+            delete[] _data;
+            _data = other._data;
+            _size = other._size;
+            _capacity = other._capacity;
+            other._data = nullptr;
+            other._size = 0;
+            other._capacity = 0;
+        }
+        return *this;
+    }
+
     ~Array() { delete[] _data; }
+
+    void push_back(const T& value) {
+        if (_size == _capacity) {
+            reallocate(_capacity == 0 ? 1 : _capacity * 2);
+        }
+        _data[_size++] = value;
+    }
 
     void push_back(T&& value) {
         if (_size == _capacity) {
@@ -32,7 +79,9 @@ public:
     }
 
     void erase(size_t index) {
-        if (index >= _size) return;
+        if (index >= _size) {
+            throw std::out_of_range("Index out of range");
+        }
         for (size_t i = index; i < _size - 1; ++i) {
             _data[i] = std::move(_data[i + 1]);
         }
